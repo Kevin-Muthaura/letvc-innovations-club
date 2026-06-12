@@ -81,7 +81,7 @@ export default function Mentors() {
           {mentors.map(m => (
             <Card key={m.id} onClick={() => setSelected(sel => sel?.id === m.id ? null : m)} highlight={selected?.id === m.id} style={{ cursor:'pointer' }}>
               <div style={{ display:'flex', alignItems:'flex-start', gap:12, marginBottom:10 }}>
-                <Avatar name={m.full_name} size={44} color={C.accent} />
+                <Avatar name={m.full_name} size={44} color={C.accent} url={m.avatar_url} />
                 <div style={{ flex:1, minWidth:0 }}>
                   <div style={{ fontWeight:700, fontSize:15, color:C.text }}>{m.full_name}</div>
                   <Badge label={m.technical_area||'General'} color={AREA_COLORS[m.technical_area]||'gray'} />
@@ -110,7 +110,7 @@ export default function Mentors() {
               <button onClick={() => setSelected(null)} style={{ background:'none', border:'none', cursor:'pointer', color:C.text3 }}><i className="ti ti-x" /></button>
             </div>
             <div style={{ textAlign:'center', marginBottom:16 }}>
-              <Avatar name={selected.full_name} size={72} color={C.accent} />
+              <Avatar name={selected.full_name} size={72} color={C.accent} url={selected.avatar_url} />
               <div style={{ fontWeight:700, fontSize:17, color:C.text, marginTop:10 }}>{selected.full_name}</div>
               <div style={{ marginTop:8 }}><Badge label={selected.technical_area||'General'} color="teal" /></div>
             </div>

@@ -261,7 +261,7 @@ export default function Ideas() {
                   <p style={{ fontSize:14,color:C.text2,lineHeight:1.6,marginBottom:10 }}>{idea.description}</p>
                   <div style={{ display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:8 }}>
                     <div style={{ display:'flex',alignItems:'center',gap:8 }}>
-                      <Avatar name={idea.author_name} size={24}/>
+                      <Avatar name={idea.author_name} size={24} url={idea.avatar_url}/>
                       <span style={{ fontSize:12,color:C.text3 }}>{idea.author_name} · {new Date(idea.created_at).toLocaleDateString()}</span>
                     </div>
                     <div style={{ display:'flex',gap:6,flexWrap:'wrap' }}>
@@ -293,7 +293,7 @@ export default function Ideas() {
                         <div style={{ display:'flex',flexDirection:'column',gap:10,marginBottom:12 }}>
                           {comments.map(cm=>(
                             <div key={cm.id} style={{ display:'flex',gap:10 }}>
-                              <Avatar name={cm.author_name} size={28}/>
+                              <Avatar name={cm.author_name} size={28} url={cm.avatar_url}/>
                               <div style={{ background:C.bg3,borderRadius:8,padding:'8px 12px',flex:1 }}>
                                 <div style={{ fontSize:12,fontWeight:600,color:C.primary2,marginBottom:3 }}>{cm.author_name}</div>
                                 <div style={{ fontSize:14,color:C.text2 }}>{cm.content}</div>

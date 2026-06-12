@@ -27,8 +27,8 @@ export default function Projects() {
   const load = useCallback(async () => {
     setLoading(true);
     const [pRes, mRes, mentRes] = await Promise.all([
-      supabase.from('projects').select(`*,project_members(member_id,members(id,full_name,section)),project_updates(id,content,author_name,created_at),mentors(full_name,technical_area)`).order('updated_at',{ascending:false}),
-      supabase.from('members').select('id,full_name,section').eq('status','active').order('full_name'),
+      supabase.from('projects').select(`*,project_members(member_id,members(id,full_name,section,avatar_url)),project_updates(id,content,author_name,created_at),mentors(full_name,technical_area)`).order('updated_at',{ascending:false}),
+      supabase.from('members').select('id,full_name,section,avatar_url').eq('status','active').order('full_name'),
       supabase.from('mentors').select('id,full_name,technical_area').eq('is_active',true),
     ]);
     setProjects(pRes.data||[]); setMembers(mRes.data||[]); setMentors(mentRes.data||[]);
@@ -166,7 +166,7 @@ export default function Projects() {
                 <div style={{ fontSize:12, fontWeight:700, color:C.text3, textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:8 }}>Team</div>
                 {selected.project_members.map(pm=>(
                   <div key={pm.member_id} style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8 }}>
-                    <Avatar name={pm.members?.full_name||'?'} size={28} section={pm.members?.section} />
+                    <Avatar name={pm.members?.full_name||'?'} size={28} section={pm.members?.section} url={pm.members?.avatar_url} />
                     <div>
                       <div style={{ fontSize:13, fontWeight:600, color:C.text }}>{pm.members?.full_name}</div>
                       <div style={{ fontSize:11, color:C.text3 }}>{pm.members?.section}</div>
@@ -231,7 +231,7 @@ export default function Projects() {
                 {members.map(m=>(
                   <label key={m.id} style={{ display:'flex', alignItems:'center', gap:8, padding:'5px 6px', cursor:'pointer', borderRadius:6, background:teamIds.includes(m.id)?C.primaryBg:'transparent' }}>
                     <input type="checkbox" checked={teamIds.includes(m.id)} onChange={e=>setTeamIds(ids=>e.target.checked?[...ids,m.id]:ids.filter(i=>i!==m.id))} />
-                    <Avatar name={m.full_name} size={22} section={m.section} />
+                    <Avatar name={m.full_name} size={22} section={m.section} url={m.avatar_url} />
                     <span style={{ fontSize:13, color:C.text }}>{m.full_name}</span>
                     <span style={{ fontSize:11, color:C.text3, marginLeft:'auto' }}>{m.section}</span>
                   </label>

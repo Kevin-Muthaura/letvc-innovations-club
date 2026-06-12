@@ -140,7 +140,7 @@ export default function Members({ setPage }) {
                     <tr key={m.id} style={{ borderTop:`1px solid ${C.border}`, background:detail?.id===m.id?C.primaryBg:'transparent', cursor:'pointer' }} onClick={()=>setDetail(detail?.id===m.id?null:m)}>
                       <td style={{ padding:'12px 14px' }}>
                         <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-                          <Avatar name={m.full_name} size={34} section={m.section} />
+                          <Avatar name={m.full_name} size={34} section={m.section} url={m.avatar_url} />
                           <span style={{ fontWeight:600, fontSize:14, color:C.text }}>{m.full_name}</span>
                         </div>
                       </td>
@@ -179,7 +179,7 @@ export default function Members({ setPage }) {
               <button onClick={()=>setDetail(null)} style={{ background:'none', border:'none', cursor:'pointer', color:C.text3 }}><i className="ti ti-x"/></button>
             </div>
             <div style={{ textAlign:'center', marginBottom:16 }}>
-              <Avatar name={detail.full_name} size={64} section={detail.section} />
+              <Avatar name={detail.full_name} size={64} section={detail.section} url={detail.avatar_url} />
               <div style={{ fontWeight:700, fontSize:17, color:C.text, marginTop:10 }}>{detail.full_name}</div>
               <div style={{ fontSize:13, color:C.text3 }}>{detail.section}</div>
               <div style={{ marginTop:8, display:'flex', gap:6, justifyContent:'center', flexWrap:'wrap' }}>

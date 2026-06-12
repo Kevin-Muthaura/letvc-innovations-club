@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { supabase, logAudit } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { Avatar, Badge, Btn, Inp, Sel, Txt, Card, Modal, Confirm, Empty, useToast, C } from '../components/UI';
@@ -6,7 +6,8 @@ import { Avatar, Badge, Btn, Inp, Sel, Txt, Card, Modal, Confirm, Empty, useToas
 const CATS = ['General','Opportunity','Resource','Question','Announcement','Achievement'];
 const CAT_C = { General:'gray', Opportunity:'green', Resource:'blue', Question:'amber', Announcement:'red', Achievement:'teal' };
 const CAT_ICO = { General:'message-circle', Opportunity:'briefcase', Resource:'link', Question:'help-circle', Announcement:'speakerphone', Achievement:'trophy' };
-const BLANK = { content:'', link_url:'', link_title:'', category:'General' };
+const BLANK = { content:'', link_url:'', link_title:'', category:'General', media_url:'', media_type:'' };
+const MAX_MEDIA_MB = 8;
 
 export default function Posts() {
   const { profile, isAdmin } = useAuth();
@@ -18,6 +19,8 @@ export default function Posts() {
   const [modal,    setModal]   = useState(null);
   const [form,     setForm]    = useState(BLANK);
   const [saving,   setSaving]  = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef(null);
   const [delPost,  setDelPost] = useState(null);
   const [openId,   setOpenId]  = useState(null);
   const [comments, setComments]= useState([]);
@@ -70,6 +73,45 @@ export default function Posts() {
       const u = new URL(url);
       return u.hostname.replace('www.','');
     } catch { return url; }
+  }
+
+  async function uploadMedia(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const isImage = file.type.startsWith('image/');
+    const isVideo = file.type.startsWith('video/');
+    if (!isImage && !isVideo) return show('Only image or video files are allowed','error');
+    if (file.size > MAX_MEDIA_MB * 1024 * 1024) return show(`File must be under ${MAX_MEDIA_MB}MB`,'error');
+
+    setUploading(true);
+    try {
+      const ext  = file.name.split('.').pop();
+      const path = `posts/${profile.id}_${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from('post-media').upload(path, file, { upsert:true });
+      if (upErr) throw upErr;
+      const { data:{ publicUrl } } = supabase.storage.from('post-media').getPublicUrl(path);
+      setForm(f => ({ ...f, media_url: publicUrl, media_type: isImage ? 'image' : 'video' }));
+      show(`${isImage?'Image':'Video'} attached ✅`);
+    } catch (ex) {
+      // Fallback for small images: store as base64 if storage bucket isn't set up
+      if (isImage && file.size < 1.5 * 1024 * 1024) {
+        const reader = new FileReader();
+        reader.onload = ev => {
+          setForm(f => ({ ...f, media_url: ev.target.result, media_type:'image' }));
+          show('Image attached ✅');
+          setUploading(false);
+        };
+        reader.readAsDataURL(file);
+        return;
+      }
+      show('Upload failed — set up a "post-media" storage bucket in Supabase (see guide)','error');
+    }
+    setUploading(false);
+  }
+
+  function removeMedia() {
+    setForm(f => ({ ...f, media_url:'', media_type:'' }));
+    if (fileRef.current) fileRef.current.value = '';
   }
 
   async function savePost() {
@@ -142,7 +184,7 @@ export default function Posts() {
                 </div>
               )}
               <div style={{ display:'flex', gap:12 }}>
-                <Avatar name={post.author_name} size={40} url={post.profile_id ? undefined : undefined}/>
+                <Avatar name={post.author_name} size={40} url={post.avatar_url}/>
                 <div style={{ flex:1 }}>
                   <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:8, marginBottom:6 }}>
                     <div>
@@ -152,7 +194,15 @@ export default function Posts() {
                     <Badge label={post.category} color={CAT_C[post.category]||'gray'}/>
                   </div>
 
-                  <p style={{ fontSize:14, color:C.text2, lineHeight:1.6, marginBottom:post.link_url?10:12, whiteSpace:'pre-wrap' }}>{post.content}</p>
+                  <p style={{ fontSize:14, color:C.text2, lineHeight:1.6, marginBottom:(post.link_url||post.media_url)?10:12, whiteSpace:'pre-wrap' }}>{post.content}</p>
+
+                  {post.media_url && (
+                    <div style={{ borderRadius:10, overflow:'hidden', marginBottom:12, border:`1px solid ${C.border}`, background:'#000' }}>
+                      {post.media_type==='video'
+                        ? <video src={post.media_url} controls style={{ width:'100%', maxHeight:420, display:'block' }}/>
+                        : <img src={post.media_url} alt="" style={{ width:'100%', maxHeight:420, objectFit:'contain', display:'block', margin:'0 auto' }}/>}
+                    </div>
+                  )}
 
                   {post.link_url && (
                     <a href={post.link_url} target="_blank" rel="noreferrer" style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 14px', background:C.bg3, borderRadius:8, marginBottom:12, textDecoration:'none', border:`1px solid ${C.border}` }}>
@@ -173,7 +223,7 @@ export default function Posts() {
                     </Btn>
                     {isAdmin && <Btn size="sm" icon="pin" onClick={()=>togglePin(post)}>{post.is_pinned?'Unpin':'Pin'}</Btn>}
                     {(isAdmin||isMine) && <>
-                      <Btn size="sm" icon="edit" onClick={()=>{ setForm({content:post.content, link_url:post.link_url||'', link_title:post.link_title||'', category:post.category}); setModal({id:post.id}); }}>Edit</Btn>
+                      <Btn size="sm" icon="edit" onClick={()=>{ setForm({content:post.content, link_url:post.link_url||'', link_title:post.link_title||'', category:post.category, media_url:post.media_url||'', media_type:post.media_type||''}); setModal({id:post.id}); }}>Edit</Btn>
                       <Btn size="sm" danger icon="trash" onClick={()=>setDelPost(post)}>Del</Btn>
                     </>}
                   </div>
@@ -186,7 +236,7 @@ export default function Posts() {
                         <div style={{ display:'flex', flexDirection:'column', gap:10, marginBottom:12 }}>
                           {comments.map(cm => (
                             <div key={cm.id} style={{ display:'flex', gap:10 }}>
-                              <Avatar name={cm.author_name} size={28}/>
+                              <Avatar name={cm.author_name} size={28} url={cm.avatar_url}/>
                               <div style={{ background:C.bg3, borderRadius:8, padding:'8px 12px', flex:1 }}>
                                 <div style={{ fontSize:12, fontWeight:600, color:C.primary2, marginBottom:3 }}>{cm.author_name}</div>
                                 <div style={{ fontSize:14, color:C.text2 }}>{cm.content}</div>
@@ -211,16 +261,40 @@ export default function Posts() {
       </div>
 
       {modal && (
-        <Modal title={modal==='add'?'New Post':'Edit Post'} onClose={()=>setModal(null)} width={560}>
+        <Modal title={modal==='add'?'New Post':'Edit Post'} onClose={()=>{ setModal(null); setForm(BLANK); }} width={560}>
           <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
             <Txt label="What's on your mind?" value={form.content} onChange={v=>setForm({...form,content:v})} placeholder="Share an update, ask a question, post an opportunity…" rows={4} required/>
+
+            {/* Media upload */}
+            <div>
+              <label style={{ fontSize:11, fontWeight:700, color:C.text3, textTransform:'uppercase', letterSpacing:'0.5px', display:'block', marginBottom:6 }}>Photo or Video (optional)</label>
+              {form.media_url ? (
+                <div style={{ position:'relative', borderRadius:8, overflow:'hidden', border:`1px solid ${C.border}` }}>
+                  {form.media_type==='video'
+                    ? <video src={form.media_url} controls style={{ width:'100%', maxHeight:240, display:'block', background:'#000' }}/>
+                    : <img src={form.media_url} alt="attachment" style={{ width:'100%', maxHeight:240, objectFit:'cover', display:'block' }}/>}
+                  <button onClick={removeMedia} style={{ position:'absolute', top:8, right:8, background:'rgba(0,0,0,0.6)', color:'#fff', border:'none', borderRadius:99, width:28, height:28, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                    <i className="ti ti-x" style={{ fontSize:16 }}/>
+                  </button>
+                </div>
+              ) : (
+                <button type="button" onClick={()=>fileRef.current?.click()} disabled={uploading}
+                  style={{ width:'100%', padding:'18px', border:`1px dashed ${C.border2}`, borderRadius:8, background:C.bg3, color:C.text3, cursor:uploading?'wait':'pointer', display:'flex', flexDirection:'column', alignItems:'center', gap:6, fontFamily:'inherit', fontSize:13 }}>
+                  {uploading
+                    ? <><i className="ti ti-loader-2 spin" style={{ fontSize:22 }}/> Uploading…</>
+                    : <><i className="ti ti-photo-video" style={{ fontSize:22 }}/> Click to add a photo or video (max {MAX_MEDIA_MB}MB)</>}
+                </button>
+              )}
+              <input ref={fileRef} type="file" accept="image/*,video/*" onChange={uploadMedia} style={{ display:'none' }}/>
+            </div>
+
             <Inp label="Link (optional)" value={form.link_url} onChange={v=>setForm({...form,link_url:v})} placeholder="https://…"/>
             {form.link_url && <Inp label="Link Title (optional)" value={form.link_title} onChange={v=>setForm({...form,link_title:v})} placeholder="Short description of the link"/>}
             <Sel label="Category" value={form.category} onChange={v=>setForm({...form,category:v})} options={CATS}/>
           </div>
           <div style={{ marginTop:'1.25rem', display:'flex', gap:10, justifyContent:'flex-end' }}>
-            <Btn onClick={()=>setModal(null)}>Cancel</Btn>
-            <Btn variant="primary" icon="send" onClick={savePost} disabled={saving}>{saving?'Posting…':'Post'}</Btn>
+            <Btn onClick={()=>{ setModal(null); setForm(BLANK); }}>Cancel</Btn>
+            <Btn variant="primary" icon="send" onClick={savePost} disabled={saving||uploading}>{saving?'Posting…':'Post'}</Btn>
           </div>
         </Modal>
       )}
