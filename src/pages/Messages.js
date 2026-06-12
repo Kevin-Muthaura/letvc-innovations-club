@@ -52,7 +52,6 @@ export default function Messages() {
       }
       sessionStorage.removeItem('letvc_chat_with');
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [contacts]);
 
   /* ── Search filter ── */
