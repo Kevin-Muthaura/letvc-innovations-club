@@ -1,29 +1,31 @@
 import { useState } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import Layout    from './components/Layout';
-import Login     from './pages/Login';
-import Dashboard from './pages/Dashboard';
-import Members   from './pages/Members';
-import Ideas     from './pages/Ideas';
-import Projects  from './pages/Projects';
-import Events    from './pages/Events';
-import Mentors   from './pages/Mentors';
+import Layout        from './components/Layout';
+import Login         from './pages/Login';
+import Dashboard     from './pages/Dashboard';
+import Members       from './pages/Members';
+import Ideas         from './pages/Ideas';
+import Projects      from './pages/Projects';
+import Events        from './pages/Events';
+import Meetings      from './pages/Meetings';
+import Mentors       from './pages/Mentors';
 import Announcements from './pages/Announcements';
 import Leaderboard   from './pages/Leaderboard';
 import AdminPanel    from './pages/AdminPanel';
 import Profile       from './pages/Profile';
 
 const PAGES = {
-  dashboard: Dashboard,
-  members:   Members,
-  ideas:     Ideas,
-  projects:  Projects,
-  events:    Events,
-  mentors:   Mentors,
+  dashboard:     Dashboard,
+  members:       Members,
+  ideas:         Ideas,
+  projects:      Projects,
+  events:        Events,
+  meetings:      Meetings,
+  mentors:       Mentors,
   announcements: Announcements,
   leaderboard:   Leaderboard,
-  admin:     AdminPanel,
-  profile:   Profile,
+  admin:         AdminPanel,
+  profile:       Profile,
 };
 
 function App() {
@@ -35,7 +37,7 @@ function App() {
       <div style={{ minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center', background:'#0f1117' }}>
         <div style={{ textAlign:'center' }}>
           <i className="ti ti-loader-2" style={{ fontSize:40, color:'#6c63ff', animation:'spin 0.8s linear infinite', display:'block' }} />
-          <p style={{ color:'#5f6680', marginTop:12, fontSize:14 }}>Loading…</p>
+          <p style={{ color:'#5f6680', marginTop:12, fontSize:14 }}>Loading LETVC Innovations Club…</p>
         </div>
         <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
       </div>
@@ -48,7 +50,7 @@ function App() {
 
   return (
     <Layout page={page} setPage={setPage}>
-      <PageComponent />
+      <PageComponent setPage={setPage} />
     </Layout>
   );
 }
