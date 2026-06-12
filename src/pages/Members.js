@@ -8,7 +8,7 @@ const STATUS_C = { active:'green', inactive:'gray', suspended:'red' };
 const ROLE_C   = { member:'blue', club_officer:'purple', captain:'amber' };
 const BLANK    = { full_name:'', section:'', adm_no:'', phone:'', email:'', role:'member', status:'active' };
 
-export default function Members() {
+export default function Members({ setPage }) {
   const { isAdmin, profile } = useAuth();
   const { show, Toasts }     = useToast();
   const [rows,    setRows]    = useState([]);
@@ -193,6 +193,12 @@ export default function Members() {
                 <div><div style={{ fontSize:11, color:C.text3, fontWeight:600, textTransform:'uppercase' }}>{lbl}</div><div style={{ fontSize:13, color:C.text }}>{val}</div></div>
               </div>
             ))}
+            {detail.profile_id && detail.profile_id !== profile?.id && (
+              <Btn variant="primary" icon="message-circle" size="sm" style={{ width:'100%', marginBottom:8 }}
+                onClick={() => { sessionStorage.setItem('letvc_chat_with', detail.profile_id); setPage && setPage('messages'); }}>
+                Message {detail.full_name.split(' ')[0]}
+              </Btn>
+            )}
             {isAdmin && (
               <div style={{ display:'flex', gap:8, marginTop:12 }}>
                 <Btn variant="outline" icon="edit" onClick={()=>openEdit(detail)} size="sm" style={{ flex:1 }}>Edit</Btn>

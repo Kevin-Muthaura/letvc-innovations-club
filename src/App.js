@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import Layout        from './components/Layout';
 import Login         from './pages/Login';
 import Dashboard     from './pages/Dashboard';
+import Posts         from './pages/Posts';
 import Members       from './pages/Members';
 import Ideas         from './pages/Ideas';
 import Projects      from './pages/Projects';
@@ -11,11 +12,13 @@ import Meetings      from './pages/Meetings';
 import Mentors       from './pages/Mentors';
 import Announcements from './pages/Announcements';
 import Leaderboard   from './pages/Leaderboard';
+import Messages      from './pages/Messages';
 import AdminPanel    from './pages/AdminPanel';
 import Profile       from './pages/Profile';
 
 const PAGES = {
   dashboard:     Dashboard,
+  posts:         Posts,
   members:       Members,
   ideas:         Ideas,
   projects:      Projects,
@@ -24,6 +27,7 @@ const PAGES = {
   mentors:       Mentors,
   announcements: Announcements,
   leaderboard:   Leaderboard,
+  messages:      Messages,
   admin:         AdminPanel,
   profile:       Profile,
 };

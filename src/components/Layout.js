@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { supabase } from '../lib/supabase';
 import { Avatar, NotificationBell, C } from './UI';
 
 const NAV = [
   { id:'dashboard',     label:'Dashboard',     icon:'layout-dashboard' },
+  { id:'posts',         label:'Posts',         icon:'message-2' },
   { id:'members',       label:'Members',       icon:'users' },
   { id:'ideas',         label:'Ideas Feed',    icon:'bulb' },
   { id:'projects',      label:'Projects',      icon:'rocket' },
@@ -12,6 +14,7 @@ const NAV = [
   { id:'mentors',       label:'Mentors',       icon:'user-star' },
   { id:'announcements', label:'Announcements', icon:'speakerphone' },
   { id:'leaderboard',   label:'Leaderboard',   icon:'trophy' },
+  { id:'messages',      label:'Messages',      icon:'message-circle' },
 ];
 
 const WHATSAPP = 'https://chat.whatsapp.com/DWvtX7uxDcOCWDInbNDOUM';
@@ -20,15 +23,35 @@ export default function Layout({ page, setPage, children }) {
   const { profile, isAdmin, signOut } = useAuth();
   const [collapsed, setCollapsed]     = useState(false);
   const [mobileOpen, setMobileOpen]   = useState(false);
+  const [unreadMsgs, setUnreadMsgs]   = useState(0);
 
-  function NavItem({ item }) {
+  useEffect(() => {
+    if (!profile?.id) return;
+    async function loadUnread() {
+      const { count } = await supabase.from('messages').select('id',{count:'exact',head:true}).eq('receiver_id',profile.id).eq('is_read',false);
+      setUnreadMsgs(count || 0);
+    }
+    loadUnread();
+    const ch = supabase.channel('unread_msgs_'+profile.id)
+      .on('postgres_changes', { event:'INSERT', schema:'public', table:'messages', filter:`receiver_id=eq.${profile.id}` }, () => setUnreadMsgs(n=>n+1))
+      .on('postgres_changes', { event:'UPDATE', schema:'public', table:'messages', filter:`receiver_id=eq.${profile.id}` }, () => loadUnread())
+      .subscribe();
+    return () => supabase.removeChannel(ch);
+  }, [profile?.id]);
+
+  // Reset unread count when navigating to Messages page
+  useEffect(() => { if (page === 'messages') setTimeout(()=>setUnreadMsgs(0), 1000); }, [page]);
+
+  function NavItem({ item, badge }) {
     const active = page === item.id;
     return (
       <button onClick={()=>{ setPage(item.id); setMobileOpen(false); }}
-        style={{ width:'100%',display:'flex',alignItems:'center',gap:10,padding:'9px 14px',borderRadius:8,border:'none',cursor:'pointer',fontFamily:'inherit',fontWeight:500,fontSize:14,background:active?C.primaryBg:'transparent',color:active?C.primary2:C.text2,transition:'all 0.15s',textAlign:'left',whiteSpace:'nowrap',overflow:'hidden' }}
+        style={{ width:'100%',display:'flex',alignItems:'center',gap:10,padding:'9px 14px',borderRadius:8,border:'none',cursor:'pointer',fontFamily:'inherit',fontWeight:500,fontSize:14,background:active?C.primaryBg:'transparent',color:active?C.primary2:C.text2,transition:'all 0.15s',textAlign:'left',whiteSpace:'nowrap',overflow:'hidden',position:'relative' }}
         title={collapsed?item.label:undefined}>
         <i className={`ti ti-${item.icon}`} style={{ fontSize:18,flexShrink:0 }}/>
-        {!collapsed&&<span>{item.label}</span>}
+        {!collapsed&&<span style={{ flex:1 }}>{item.label}</span>}
+        {!collapsed&&badge>0&&<span style={{ background:C.danger,color:'#fff',borderRadius:99,fontSize:10,fontWeight:700,minWidth:18,height:18,display:'flex',alignItems:'center',justifyContent:'center',padding:'0 4px' }}>{badge}</span>}
+        {collapsed&&badge>0&&<span style={{ position:'absolute',top:4,right:4,width:8,height:8,borderRadius:'50%',background:C.danger }}/>}
       </button>
     );
   }
@@ -43,7 +66,7 @@ export default function Layout({ page, setPage, children }) {
       </div>
 
       <nav style={{ flex:1,padding:'8px',overflowY:'auto' }}>
-        {NAV.map(item=><NavItem key={item.id} item={item}/>)}
+        {NAV.map(item=><NavItem key={item.id} item={item} badge={item.id==='messages'?unreadMsgs:0}/>)}
         {isAdmin&&<NavItem item={{ id:'admin',label:'Admin Panel',icon:'settings' }}/>}
 
         {/* WhatsApp link */}
