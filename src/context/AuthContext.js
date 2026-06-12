@@ -35,8 +35,24 @@ export function AuthProvider({ children }) {
   }
 
   async function signUp(email, password, meta = {}) {
-    const { data, error } = await supabase.auth.signUp({ email, password });
+    // Pass metadata so the database trigger (handle_new_user) can read it
+    // via NEW.raw_user_meta_data and auto-create both the profile AND
+    // a matching members row.
+    const { data, error } = await supabase.auth.signUp({
+      email, password,
+      options: {
+        data: {
+          full_name: meta.full_name || '',
+          section:   meta.section   || '',
+          adm_no:    meta.adm_no    || null,
+          phone:     meta.phone     || ''
+        }
+      }
+    });
     if (error) throw error;
+
+    // Fallback: if the trigger hasn't created the profile yet for some
+    // reason (e.g. trigger not installed), create/patch it manually.
     if (data.user) {
       await supabase.from('profiles').upsert({
         id: data.user.id, email,
@@ -45,7 +61,7 @@ export function AuthProvider({ children }) {
         section: meta.section || '',
         adm_no: meta.adm_no || null,
         phone: meta.phone || ''
-      });
+      }, { onConflict: 'id', ignoreDuplicates: true });
     }
   }
 

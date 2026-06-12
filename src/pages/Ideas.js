@@ -20,6 +20,7 @@ export default function Ideas() {
   const [ideas,    setIdeas]   = useState([]);
   const [loading,  setLoad]    = useState(true);
   const [myVotes,  setMyVotes] = useState({});
+  const [myLikes,  setMyLikes] = useState({});
   const [saved,    setSaved]   = useState({});
   const [modal,    setModal]   = useState(null);
   const [form,     setForm]    = useState(BLANK);
@@ -44,12 +45,14 @@ export default function Ideas() {
     const { data } = await q;
     setIdeas(data||[]);
     if (profile) {
-      const [{ data:votes },{ data:savedRows }] = await Promise.all([
+      const [{ data:votes },{ data:savedRows },{ data:likeRows }] = await Promise.all([
         supabase.from('idea_votes').select('idea_id,vote_type').eq('user_id',profile.id),
         supabase.from('saved_ideas').select('idea_id').eq('user_id',profile.id),
+        supabase.from('idea_likes').select('idea_id').eq('user_id',profile.id),
       ]);
       const vm={}; (votes||[]).forEach(v=>{ vm[v.idea_id]=v.vote_type; }); setMyVotes(vm);
       const sm={}; (savedRows||[]).forEach(s=>{ sm[s.idea_id]=true; }); setSaved(sm);
+      const lm={}; (likeRows||[]).forEach(l=>{ lm[l.idea_id]=true; }); setMyLikes(lm);
     }
     setLoad(false);
   }, [filter,catF,search,sort,profile]);
@@ -90,6 +93,22 @@ export default function Ideas() {
         }
       }
     }
+  }
+
+  async function toggleLike(idea) {
+    if (!profile) return show('Sign in to like ideas','error');
+    const wasLiked = !!myLikes[idea.id];
+    // optimistic UI update
+    setMyLikes(l=>{ const n={...l}; if (wasLiked) delete n[idea.id]; else n[idea.id]=true; return n; });
+    setIdeas(ids=>ids.map(i=>i.id===idea.id?{...i,likes_count:Math.max(0,(i.likes_count||0)+(wasLiked?-1:1))}:i));
+    const { data, error } = await supabase.rpc('toggle_idea_like',{ p_idea_id:idea.id, p_user_id:profile.id });
+    if (error) {
+      // revert on error
+      setMyLikes(l=>{ const n={...l}; if (wasLiked) n[idea.id]=true; else delete n[idea.id]; return n; });
+      setIdeas(ids=>ids.map(i=>i.id===idea.id?{...i,likes_count:Math.max(0,(i.likes_count||0)+(wasLiked?1:-1))}:i));
+      return show(error.message,'error');
+    }
+    if (!wasLiked) show('Liked! ❤️ Author gets +2 points');
   }
 
   async function toggleSave(idea) {
@@ -246,6 +265,9 @@ export default function Ideas() {
                       <span style={{ fontSize:12,color:C.text3 }}>{idea.author_name} · {new Date(idea.created_at).toLocaleDateString()}</span>
                     </div>
                     <div style={{ display:'flex',gap:6,flexWrap:'wrap' }}>
+                      <button onClick={()=>toggleLike(idea)} style={{ background:myLikes[idea.id]?C.dangerBg:'transparent',border:`1px solid ${myLikes[idea.id]?C.danger:C.border}`,color:myLikes[idea.id]?C.danger:C.text3,borderRadius:8,padding:'4px 10px',cursor:'pointer',fontSize:13,display:'flex',alignItems:'center',gap:5,fontFamily:'inherit',fontWeight:600,transition:'all 0.15s' }}>
+                        {myLikes[idea.id]?'❤️':'🤍'} {idea.likes_count||0}
+                      </button>
                       <button onClick={()=>toggleSave(idea)} style={{ background:saved[idea.id]?C.warnBg:'transparent',border:`1px solid ${saved[idea.id]?C.warn:C.border}`,color:saved[idea.id]?C.warn:C.text3,borderRadius:8,padding:'4px 10px',cursor:'pointer',fontSize:13,display:'flex',alignItems:'center',gap:4 }}>
                         🔖
                       </button>

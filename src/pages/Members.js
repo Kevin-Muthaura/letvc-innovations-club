@@ -151,7 +151,10 @@ export default function Members() {
                         {m.email && <div style={{ maxWidth:160, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}><i className="ti ti-mail" style={{ marginRight:3 }}/>{m.email}</div>}
                       </td>
                       <td style={{ padding:'12px 14px' }}><Badge label={m.role.replace('_',' ')} color={ROLE_C[m.role]||'blue'}/></td>
-                      <td style={{ padding:'12px 14px' }}><Badge label={m.status} color={STATUS_C[m.status]} dot /></td>
+                      <td style={{ padding:'12px 14px' }}>
+                        <Badge label={m.status} color={STATUS_C[m.status]} dot />
+                        {m.profile_id && <span title="Has a registered account" style={{ marginLeft:6 }}><Badge label="🔗 Account" color="teal"/></span>}
+                      </td>
                       {isAdmin && (
                         <td style={{ padding:'12px 14px' }} onClick={e=>e.stopPropagation()}>
                           <div style={{ display:'flex', gap:6 }}>
