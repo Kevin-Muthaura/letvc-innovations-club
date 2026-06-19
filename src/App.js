@@ -36,29 +36,27 @@ function App() {
   const { user, loading } = useAuth();
   const [page, setPage]   = useState('dashboard');
 
-  if (loading) {
-    return (
-      <div style={{ minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center', background:'#0f1117' }}>
-        <div style={{ textAlign:'center' }}>
-          <i className="ti ti-loader-2" style={{ fontSize:40, color:'#6c63ff', animation:'spin 0.8s linear infinite', display:'block' }} />
-          <p style={{ color:'#5f6680', marginTop:12, fontSize:14 }}>Loading LETVC Innovations Club…</p>
-        </div>
-        <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+  if (loading) return (
+    <div style={{ minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center', background:'#0f1117' }}>
+      <div style={{ textAlign:'center' }}>
+        <i className="ti ti-loader-2" style={{ fontSize:40, color:'#6c63ff', animation:'spin 0.8s linear infinite', display:'block' }}/>
+        <p style={{ color:'#5f6680', marginTop:12, fontSize:14 }}>Loading LETVC Innovations Club…</p>
       </div>
-    );
-  }
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+    </div>
+  );
 
-  if (!user) return <Login />;
+  if (!user) return <Login/>;
 
-  const PageComponent = PAGES[page] || Dashboard;
+  const Page = PAGES[page] || Dashboard;
 
   return (
     <Layout page={page} setPage={setPage}>
-      <PageComponent setPage={setPage} />
+      <Page setPage={setPage}/>
     </Layout>
   );
 }
 
 export default function Root() {
-  return <AuthProvider><App /></AuthProvider>;
+  return <AuthProvider><App/></AuthProvider>;
 }
