@@ -49,8 +49,11 @@ export default function Posts(){
 
   async function postComment(postId){
     if(!comment.trim())return;
-    const{data}=await supabase.from('post_comments').insert({post_id:postId,user_id:profile?.id||null,author_name:profile?.full_name||'Anonymous',content:comment}).select().single();
-    setComments(c=>[...c,data]);setComment('');
+    const content=comment.trim();
+    setComment(''); // clear input immediately for responsiveness
+    const{data,error}=await supabase.from('post_comments').insert({post_id:postId,user_id:profile?.id||null,author_name:profile?.full_name||'Anonymous',content}).select().single();
+    if(error){show(error.message,'error');setComment(content);return;}
+    if(data)setComments(c=>[...c,data]);
   }
 
   function extractLinkTitle(url){try{const u=new URL(url);return u.hostname.replace('www.','');}catch{return url;}}

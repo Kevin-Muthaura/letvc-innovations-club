@@ -167,7 +167,7 @@ export default function Meetings() {
             </div>
           )}
 
-          <div style={{maxHeight:420,overflowY:'auto',border:`1px solid ${C.border}`,borderRadius:8,overflow:'hidden'}}>
+          <div style={{maxHeight:'min(420px, 50vh)',overflowY:'auto',border:`1px solid ${C.border}`,borderRadius:8,WebkitOverflowScrolling:'touch'}}>
             {members.length===0&&<div style={{padding:'2rem',textAlign:'center',color:C.text3}}>No members found.</div>}
             {members.map((mem,i)=>{
               const isSelf = profile?.id===mem.profile_id;

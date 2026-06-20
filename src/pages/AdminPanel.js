@@ -34,7 +34,7 @@ export default function AdminPanel() {
     setLoading(true);
     // Fetch ALL profiles — no filters so new members always appear
     const [pRes, aRes, patRes, rRes, repRes] = await Promise.all([
-      supabase.from('profiles').select('*').order('created_at', { ascending:false }),
+      supabase.from('profiles').select('*').order('created_at', { ascending:false, nullsFirst:false }).order('id',{ascending:false}),
       supabase.from('audit_log').select('*').order('created_at',{ascending:false}).limit(100),
       supabase.from('patron').select('*').single(),
       supabase.from('points_rules').select('*').order('points',{ascending:false}),
